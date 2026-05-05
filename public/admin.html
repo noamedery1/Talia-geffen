@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ניהול חנות צעצועים</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="admin-page">
@@ -47,6 +53,12 @@
           <input id="price" required type="number" min="0" step="0.1" placeholder="מחיר" />
           <textarea id="description" placeholder="תיאור קצר"></textarea>
           <select id="category"></select>
+          <div class="badges-picker">
+            <span class="muted small">תגיות:</span>
+            <label class="badge-checkbox"><input type="checkbox" name="badge" value="new" /> חדש</label>
+            <label class="badge-checkbox"><input type="checkbox" name="badge" value="best" /> הכי נמכר</label>
+            <label class="badge-checkbox"><input type="checkbox" name="badge" value="sale" /> מבצע</label>
+          </div>
           <input id="image" type="file" accept="image/*" />
           <button type="submit">הוסף מוצר</button>
         </form>

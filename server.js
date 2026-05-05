@@ -5,8 +5,39 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || "1234";
+const SITE_USER = "Admin";
+const SITE_PASSWORD = "P4pert_y";
 const DATA_FILE = path.join(__dirname, "data", "products.json");
 
+function requireSiteAuth(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Basic ")) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="Skochim Store"');
+    return res.status(401).send("Authentication required");
+  }
+
+  const encoded = authHeader.slice(6).trim();
+  let decoded = "";
+  try {
+    decoded = Buffer.from(encoded, "base64").toString("utf8");
+  } catch (_error) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="Skochim Store"');
+    return res.status(401).send("Invalid authentication");
+  }
+
+  const separatorIndex = decoded.indexOf(":");
+  const user = separatorIndex >= 0 ? decoded.slice(0, separatorIndex) : "";
+  const password = separatorIndex >= 0 ? decoded.slice(separatorIndex + 1) : "";
+
+  if (user !== SITE_USER || password !== SITE_PASSWORD) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="Skochim Store"');
+    return res.status(401).send("Invalid username or password");
+  }
+
+  return next();
+}
+
+app.use(requireSiteAuth);
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -27,6 +58,22 @@ function sanitizeCategories(values) {
     const name = normalizeCategoryName(item);
     if (name) {
       unique.add(name);
+    }
+  });
+  return Array.from(unique);
+}
+
+const ALLOWED_BADGES = ["new", "best", "sale"];
+
+function sanitizeBadges(values) {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+  const unique = new Set();
+  values.forEach((item) => {
+    const tag = String(item || "").trim().toLowerCase();
+    if (ALLOWED_BADGES.includes(tag)) {
+      unique.add(tag);
     }
   });
   return Array.from(unique);
@@ -63,6 +110,7 @@ function toPublicProduct(product) {
     price: product.price,
     imageBase64: product.imageBase64 || "",
     category: normalizeCategoryName(product.category),
+    badges: sanitizeBadges(product.badges),
   };
 }
 
@@ -107,7 +155,7 @@ app.put("/api/admin/settings", checkAdmin, async (req, res) => {
 });
 
 app.post("/api/admin/products", checkAdmin, async (req, res) => {
-  const { name, price, description, imageBase64, category } = req.body;
+  const { name, price, description, imageBase64, category, badges } = req.body;
   if (!name || typeof name !== "string") {
     return res.status(400).json({ error: "Name is required" });
   }
@@ -130,6 +178,7 @@ app.post("/api/admin/products", checkAdmin, async (req, res) => {
     price: parsedPrice,
     imageBase64: imageBase64 || "",
     category: normalizeCategoryName(category),
+    badges: sanitizeBadges(badges),
   };
 
   products.push(newProduct);
@@ -152,6 +201,7 @@ app.put("/api/admin/products/:id", checkAdmin, async (req, res) => {
   const nextDescription = req.body.description ?? product.description;
   const nextImageBase64 = req.body.imageBase64 ?? product.imageBase64;
   const nextCategory = req.body.category ?? product.category;
+  const nextBadges = req.body.badges ?? product.badges ?? [];
 
   const parsedPrice = Number(nextPrice);
   if (!nextName || typeof nextName !== "string") {
@@ -168,6 +218,7 @@ app.put("/api/admin/products/:id", checkAdmin, async (req, res) => {
     description: (nextDescription || "").trim(),
     imageBase64: typeof nextImageBase64 === "string" ? nextImageBase64 : "",
     category: normalizeCategoryName(nextCategory),
+    badges: sanitizeBadges(nextBadges),
   };
 
   await writeStoreData(storeData);

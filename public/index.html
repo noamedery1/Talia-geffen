@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>חנות הסקוושים של טליה וגפן</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Fredoka:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="shop-page">
@@ -13,14 +19,25 @@
           <h1>חנות הסקוושים של טליה וגפן</h1>
           <p>סוקוושים מכל הסוגים</p>
         </div>
-        <a class="admin-link" href="/admin">ניהול</a>
       </div>
     </header>
 
     <main class="container">
-      <section id="categories-menu" class="categories-menu hidden"></section>
-      <section id="products-sections"></section>
-      <p id="empty-state" class="empty-state hidden">כרגע אין מוצרים להצגה.</p>
+      <section id="hero-carousel" class="hero-carousel hidden">
+        <button id="carousel-next" class="carousel-nav next" type="button">‹</button>
+        <button id="carousel-prev" class="carousel-nav prev" type="button">›</button>
+        <div id="carousel-track" class="carousel-track"></div>
+        <div id="carousel-dots" class="carousel-dots"></div>
+      </section>
+
+      <section class="products-area">
+        <button id="toggle-products-btn" class="toggle-products-btn" type="button">הצג את כל המוצרים</button>
+        <div id="products-content" class="products-content hidden">
+          <section id="categories-menu" class="categories-menu hidden"></section>
+          <section id="products-sections"></section>
+          <p id="empty-state" class="empty-state hidden">כרגע אין מוצרים להצגה.</p>
+        </div>
+      </section>
     </main>
 
     <button id="cart-dock" class="cart-dock" type="button">
@@ -49,6 +66,8 @@
         </div>
       </div>
     </section>
+
+    <canvas id="confetti-canvas"></canvas>
 
     <script src="/app.js"></script>
   </body>

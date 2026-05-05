@@ -131,6 +131,26 @@ function renderCategories() {
   });
 }
 
+function badgeCheckboxesHtml(productId, currentBadges) {
+  const list = Array.isArray(currentBadges) ? currentBadges : [];
+  const tags = [
+    { value: "new", label: "חדש" },
+    { value: "best", label: "הכי נמכר" },
+    { value: "sale", label: "מבצע" },
+  ];
+  return `
+    <div class="badges-picker" data-badges-for="${productId}">
+      <span class="muted small">תגיות:</span>
+      ${tags
+        .map(
+          (tag) =>
+            `<label class="badge-checkbox"><input type="checkbox" data-badge-id="${productId}" value="${tag.value}" ${list.includes(tag.value) ? "checked" : ""} /> ${tag.label}</label>`
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 async function loadAdminProducts() {
   const response = await adminFetch("/api/admin/products", { method: "GET" });
   if (response.status === 401) {
@@ -157,6 +177,7 @@ async function loadAdminProducts() {
           )
           .join("")}
       </select>
+      ${badgeCheckboxesHtml(product.id, product.badges)}
       <div class="admin-actions">
         <button data-action="save" data-id="${product.id}">שמור שינויים</button>
         <button class="btn-danger" data-action="delete" data-id="${product.id}">מחק</button>
@@ -186,10 +207,13 @@ addForm.addEventListener("submit", async (event) => {
   const category = categorySelect.value;
   const file = document.getElementById("image").files[0];
   const imageBase64 = await fileToBase64(file);
+  const badges = Array.from(addForm.querySelectorAll('input[name="badge"]:checked')).map(
+    (input) => input.value
+  );
 
   const response = await adminFetch("/api/admin/products", {
     method: "POST",
-    body: JSON.stringify({ name, price, description, imageBase64, category }),
+    body: JSON.stringify({ name, price, description, imageBase64, category, badges }),
   });
 
   if (!response.ok) {
@@ -229,12 +253,16 @@ adminProducts.addEventListener("click", async (event) => {
     const priceEl = document.querySelector(`input[data-id="${id}"][data-field="price"]`);
     const descriptionEl = document.querySelector(`textarea[data-id="${id}"][data-field="description"]`);
     const categoryEl = document.querySelector(`select[data-id="${id}"][data-field="category"]`);
+    const badges = Array.from(
+      document.querySelectorAll(`input[data-badge-id="${id}"]:checked`)
+    ).map((el) => el.value);
 
     const body = {
       name: nameEl ? nameEl.value.trim() : "",
       price: priceEl ? priceEl.value : "",
       description: descriptionEl ? descriptionEl.value.trim() : "",
       category: categoryEl ? categoryEl.value : "",
+      badges,
     };
 
     const response = await adminFetch(`/api/admin/products/${id}`, {
