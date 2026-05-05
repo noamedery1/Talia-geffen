@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>חנות הצעצועים שלנו</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="shop-page">
+    <header class="hero shop-hero">
+      <div class="hero-top">
+        <div>
+          <h1>חנות הסקוושים של טליה וגפן</h1>
+          <p>סוקוושים מכל הסוגים</p>
+        </div>
+        <a class="admin-link" href="/admin">ניהול</a>
+      </div>
+    </header>
+
+    <main class="container">
+      <section id="products-grid" class="grid"></section>
+      <p id="empty-state" class="empty-state hidden">כרגע אין מוצרים להצגה.</p>
+
+      <aside class="cart-panel">
+        <div class="cart-header">
+          <h2>הסל שלי</h2>
+          <span id="cart-count" class="cart-count">0 פריטים</span>
+        </div>
+        <div id="cart-items" class="cart-items">
+          <p class="muted">הסל שלך ריק כרגע.</p>
+        </div>
+        <div class="cart-footer">
+          <div class="cart-total-row">
+            <span>סה"כ</span>
+            <strong id="cart-total">0.00 ₪</strong>
+          </div>
+          <button id="checkout-btn" class="checkout-btn" disabled>שלח הזמנה בוואטסאפ</button>
+          <p id="checkout-note" class="muted small"></p>
+        </div>
+      </aside>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

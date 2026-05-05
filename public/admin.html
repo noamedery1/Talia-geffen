@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ניהול חנות צעצועים</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="hero hero-admin">
+      <h1>מסך ניהול מוצרים</h1>
+      <p>הוספה, עדכון ומחיקה של צעצועים</p>
+      <a class="admin-link" href="/">חזרה לחנות</a>
+    </header>
+
+    <main class="container">
+      <section class="admin-card">
+        <h2>התחברות מנהל</h2>
+        <div class="row">
+          <input id="admin-key" type="password" placeholder="מפתח מנהל (ברירת מחדל: 1234)" />
+          <button id="save-key">שמור מפתח</button>
+        </div>
+      </section>
+
+      <section class="admin-card">
+        <h2>הגדרות הזמנה</h2>
+        <p class="muted">כל ההזמנות מהחנות יישלחו למספר הזה בוואטסאפ.</p>
+        <div class="row stack-mobile">
+          <input id="whatsapp-phone" placeholder="מספר וואטסאפ לדוגמה: 972501234567" />
+          <button id="save-settings">שמור מספר וואטסאפ</button>
+        </div>
+      </section>
+
+      <section class="admin-card">
+        <h2>הוספת מוצר חדש</h2>
+        <form id="add-form" class="form-grid">
+          <input id="name" required placeholder="שם הצעצוע" />
+          <input id="price" required type="number" min="0" step="0.1" placeholder="מחיר" />
+          <textarea id="description" placeholder="תיאור קצר"></textarea>
+          <input id="image" type="file" accept="image/*" />
+          <button type="submit">הוסף מוצר</button>
+        </form>
+      </section>
+
+      <section class="admin-card">
+        <h2>מוצרים קיימים</h2>
+        <div id="admin-products" class="admin-products"></div>
+      </section>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>

@@ -1,0 +1,169 @@
+const express = require("express");
+const fs = require("fs/promises");
+const path = require("path");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const ADMIN_KEY = process.env.ADMIN_KEY || "1234";
+const DATA_FILE = path.join(__dirname, "data", "products.json");
+
+app.use(express.json({ limit: "5mb" }));
+app.use(express.static(path.join(__dirname, "public")));
+
+function sanitizePhone(phone) {
+  return String(phone || "").replace(/\D/g, "");
+}
+
+async function readStoreData() {
+  try {
+    const raw = await fs.readFile(DATA_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const products = Array.isArray(parsed.products) ? parsed.products : [];
+    const whatsappPhone = sanitizePhone(parsed.settings?.whatsappPhone);
+    return { products, settings: { whatsappPhone } };
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      const initial = { products: [], settings: { whatsappPhone: "" } };
+      await writeStoreData(initial);
+      return initial;
+    }
+    throw error;
+  }
+}
+
+async function writeStoreData(storeData) {
+  const payload = JSON.stringify(storeData, null, 2);
+  await fs.writeFile(DATA_FILE, payload, "utf8");
+}
+
+function toPublicProduct(product) {
+  return {
+    id: product.id,
+    name: product.name,
+    description: product.description || "",
+    price: product.price,
+    imageBase64: product.imageBase64 || "",
+  };
+}
+
+function checkAdmin(req, res, next) {
+  const key = req.headers["x-admin-key"];
+  if (key !== ADMIN_KEY) {
+    return res.status(401).json({ error: "Unauthorized admin access" });
+  }
+  next();
+}
+
+app.get("/api/products", async (_req, res) => {
+  const storeData = await readStoreData();
+  res.json(storeData.products.map(toPublicProduct));
+});
+
+app.get("/api/store-config", async (_req, res) => {
+  const storeData = await readStoreData();
+  res.json({ whatsappPhone: storeData.settings.whatsappPhone || "" });
+});
+
+app.get("/api/admin/products", checkAdmin, async (_req, res) => {
+  const storeData = await readStoreData();
+  res.json(storeData.products);
+});
+
+app.get("/api/admin/settings", checkAdmin, async (_req, res) => {
+  const storeData = await readStoreData();
+  res.json(storeData.settings);
+});
+
+app.put("/api/admin/settings", checkAdmin, async (req, res) => {
+  const storeData = await readStoreData();
+  const whatsappPhone = sanitizePhone(req.body.whatsappPhone);
+  storeData.settings = { ...storeData.settings, whatsappPhone };
+  await writeStoreData(storeData);
+  res.json(storeData.settings);
+});
+
+app.post("/api/admin/products", checkAdmin, async (req, res) => {
+  const { name, price, description, imageBase64 } = req.body;
+  if (!name || typeof name !== "string") {
+    return res.status(400).json({ error: "Name is required" });
+  }
+
+  const parsedPrice = Number(price);
+  if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+    return res.status(400).json({ error: "Price must be a valid number" });
+  }
+
+  if (imageBase64 && typeof imageBase64 !== "string") {
+    return res.status(400).json({ error: "Image must be a base64 string" });
+  }
+
+  const storeData = await readStoreData();
+  const products = storeData.products;
+  const newProduct = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    description: (description || "").trim(),
+    price: parsedPrice,
+    imageBase64: imageBase64 || "",
+  };
+
+  products.push(newProduct);
+  await writeStoreData(storeData);
+  res.status(201).json(newProduct);
+});
+
+app.put("/api/admin/products/:id", checkAdmin, async (req, res) => {
+  const { id } = req.params;
+  const storeData = await readStoreData();
+  const products = storeData.products;
+  const idx = products.findIndex((product) => product.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+
+  const product = products[idx];
+  const nextName = req.body.name ?? product.name;
+  const nextPrice = req.body.price ?? product.price;
+  const nextDescription = req.body.description ?? product.description;
+  const nextImageBase64 = req.body.imageBase64 ?? product.imageBase64;
+
+  const parsedPrice = Number(nextPrice);
+  if (!nextName || typeof nextName !== "string") {
+    return res.status(400).json({ error: "Name is required" });
+  }
+  if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+    return res.status(400).json({ error: "Price must be a valid number" });
+  }
+
+  products[idx] = {
+    ...product,
+    name: nextName.trim(),
+    price: parsedPrice,
+    description: (nextDescription || "").trim(),
+    imageBase64: typeof nextImageBase64 === "string" ? nextImageBase64 : "",
+  };
+
+  await writeStoreData(storeData);
+  res.json(products[idx]);
+});
+
+app.delete("/api/admin/products/:id", checkAdmin, async (req, res) => {
+  const { id } = req.params;
+  const storeData = await readStoreData();
+  const products = storeData.products;
+  const filtered = products.filter((product) => product.id !== id);
+  if (filtered.length === products.length) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  storeData.products = filtered;
+  await writeStoreData(storeData);
+  res.status(204).send();
+});
+
+app.get("/admin", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Toy store server listening on http://localhost:${PORT}`);
+});
