@@ -37,7 +37,6 @@ function requireSiteAuth(req, res, next) {
   return next();
 }
 
-app.use(requireSiteAuth);
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -238,7 +237,7 @@ app.delete("/api/admin/products/:id", checkAdmin, async (req, res) => {
   res.status(204).send();
 });
 
-app.get("/admin", (_req, res) => {
+app.get("/admin", requireSiteAuth, (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
