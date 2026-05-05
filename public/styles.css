@@ -64,6 +64,43 @@ body {
   margin: 1rem auto 6.2rem;
 }
 
+#products-sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.products-group {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.group-title {
+  margin: 0;
+  color: #1e3a8a;
+  font-size: 1.1rem;
+}
+
+.categories-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.category-chip {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-radius: 999px;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.88rem;
+  border: none;
+}
+
+.category-chip.active {
+  background: #2563eb;
+  color: #fff;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -162,6 +199,7 @@ body {
 
 input,
 textarea,
+select,
 button {
   padding: 0.62rem;
   border-radius: 10px;
@@ -189,6 +227,22 @@ button {
 .admin-products {
   display: grid;
   gap: 0.8rem;
+}
+
+.categories-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
 }
 
 .admin-item {

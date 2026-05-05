@@ -2,11 +2,16 @@ const adminKeyInput = document.getElementById("admin-key");
 const saveKeyButton = document.getElementById("save-key");
 const saveSettingsButton = document.getElementById("save-settings");
 const whatsappPhoneInput = document.getElementById("whatsapp-phone");
+const addCategoryBtn = document.getElementById("add-category-btn");
+const newCategoryInput = document.getElementById("new-category");
+const categoriesList = document.getElementById("categories-list");
+const categorySelect = document.getElementById("category");
 const addForm = document.getElementById("add-form");
 const adminProducts = document.getElementById("admin-products");
 
 const keyStorageName = "toy_store_admin_key";
 adminKeyInput.value = localStorage.getItem(keyStorageName) || "1234";
+let categories = [];
 
 function getAdminKey() {
   const keyFromInput = adminKeyInput.value.trim();
@@ -26,7 +31,7 @@ saveSettingsButton.addEventListener("click", async () => {
   const phone = whatsappPhoneInput.value.trim();
   const response = await adminFetch("/api/admin/settings", {
     method: "PUT",
-    body: JSON.stringify({ whatsappPhone: phone }),
+    body: JSON.stringify({ whatsappPhone: phone, categories }),
   });
 
   if (!response.ok) {
@@ -35,8 +40,44 @@ saveSettingsButton.addEventListener("click", async () => {
   }
   const settings = await response.json();
   whatsappPhoneInput.value = settings.whatsappPhone || "";
+  categories = Array.isArray(settings.categories) ? settings.categories : [];
+  renderCategories();
+  renderCategoryOptions();
   alert("מספר וואטסאפ נשמר");
 });
+
+addCategoryBtn.addEventListener("click", async () => {
+  const name = newCategoryInput.value.trim();
+  if (!name) {
+    return;
+  }
+  if (categories.includes(name)) {
+    alert("קטגוריה כבר קיימת");
+    return;
+  }
+  const nextCategories = [...categories, name];
+  await saveCategories(nextCategories);
+  newCategoryInput.value = "";
+});
+
+async function saveCategories(nextCategories) {
+  const response = await adminFetch("/api/admin/settings", {
+    method: "PUT",
+    body: JSON.stringify({
+      whatsappPhone: whatsappPhoneInput.value.trim(),
+      categories: nextCategories,
+    }),
+  });
+  if (!response.ok) {
+    alert("שמירת קטגוריות נכשלה");
+    return;
+  }
+  const settings = await response.json();
+  categories = Array.isArray(settings.categories) ? settings.categories : [];
+  renderCategories();
+  renderCategoryOptions();
+  await loadAdminProducts();
+}
 
 function adminFetch(url, options = {}) {
   const key = getAdminKey();
@@ -63,6 +104,33 @@ function fileToBase64(file) {
   });
 }
 
+function renderCategoryOptions() {
+  categorySelect.innerHTML = '<option value="">ללא קטגוריה</option>';
+  categories.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    categorySelect.appendChild(option);
+  });
+}
+
+function renderCategories() {
+  if (!categories.length) {
+    categoriesList.innerHTML = '<p class="muted">אין קטגוריות עדיין.</p>';
+    return;
+  }
+  categoriesList.innerHTML = "";
+  categories.forEach((name) => {
+    const row = document.createElement("div");
+    row.className = "category-row";
+    row.innerHTML = `
+      <span>${name}</span>
+      <button type="button" class="btn-danger" data-remove-category="${name}">מחק</button>
+    `;
+    categoriesList.appendChild(row);
+  });
+}
+
 async function loadAdminProducts() {
   const response = await adminFetch("/api/admin/products", { method: "GET" });
   if (response.status === 401) {
@@ -80,6 +148,15 @@ async function loadAdminProducts() {
       <input data-id="${product.id}" data-field="name" value="${product.name}" />
       <input data-id="${product.id}" data-field="price" type="number" step="0.1" value="${product.price}" />
       <textarea data-id="${product.id}" data-field="description">${product.description || ""}</textarea>
+      <select data-id="${product.id}" data-field="category">
+        <option value="">ללא קטגוריה</option>
+        ${categories
+          .map(
+            (name) =>
+              `<option value="${name}" ${product.category === name ? "selected" : ""}>${name}</option>`
+          )
+          .join("")}
+      </select>
       <div class="admin-actions">
         <button data-action="save" data-id="${product.id}">שמור שינויים</button>
         <button class="btn-danger" data-action="delete" data-id="${product.id}">מחק</button>
@@ -96,6 +173,9 @@ async function loadSettings() {
   }
   const settings = await response.json();
   whatsappPhoneInput.value = settings.whatsappPhone || "";
+  categories = Array.isArray(settings.categories) ? settings.categories : [];
+  renderCategories();
+  renderCategoryOptions();
 }
 
 addForm.addEventListener("submit", async (event) => {
@@ -103,12 +183,13 @@ addForm.addEventListener("submit", async (event) => {
   const name = document.getElementById("name").value.trim();
   const price = document.getElementById("price").value;
   const description = document.getElementById("description").value.trim();
+  const category = categorySelect.value;
   const file = document.getElementById("image").files[0];
   const imageBase64 = await fileToBase64(file);
 
   const response = await adminFetch("/api/admin/products", {
     method: "POST",
-    body: JSON.stringify({ name, price, description, imageBase64 }),
+    body: JSON.stringify({ name, price, description, imageBase64, category }),
   });
 
   if (!response.ok) {
@@ -117,6 +198,7 @@ addForm.addEventListener("submit", async (event) => {
   }
 
   addForm.reset();
+  renderCategoryOptions();
   await loadAdminProducts();
 });
 
@@ -146,11 +228,13 @@ adminProducts.addEventListener("click", async (event) => {
     const nameEl = document.querySelector(`input[data-id="${id}"][data-field="name"]`);
     const priceEl = document.querySelector(`input[data-id="${id}"][data-field="price"]`);
     const descriptionEl = document.querySelector(`textarea[data-id="${id}"][data-field="description"]`);
+    const categoryEl = document.querySelector(`select[data-id="${id}"][data-field="category"]`);
 
     const body = {
       name: nameEl ? nameEl.value.trim() : "",
       price: priceEl ? priceEl.value : "",
       description: descriptionEl ? descriptionEl.value.trim() : "",
+      category: categoryEl ? categoryEl.value : "",
     };
 
     const response = await adminFetch(`/api/admin/products/${id}`, {
@@ -166,10 +250,27 @@ adminProducts.addEventListener("click", async (event) => {
   }
 });
 
-loadAdminProducts().catch((error) => {
-  console.error("Admin load failed", error);
+categoriesList.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const categoryToRemove = target.getAttribute("data-remove-category");
+  if (!categoryToRemove) {
+    return;
+  }
+  const nextCategories = categories.filter((name) => name !== categoryToRemove);
+  await saveCategories(nextCategories);
 });
 
-loadSettings().catch((error) => {
-  console.error("Settings load failed", error);
+async function initAdmin() {
+  await loadSettings();
+  await loadAdminProducts();
+}
+
+renderCategories();
+renderCategoryOptions();
+
+initAdmin().catch((error) => {
+  console.error("Admin init failed", error);
 });

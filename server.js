@@ -14,16 +14,35 @@ function sanitizePhone(phone) {
   return String(phone || "").replace(/\D/g, "");
 }
 
+function normalizeCategoryName(value) {
+  return String(value || "").trim();
+}
+
+function sanitizeCategories(values) {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+  const unique = new Set();
+  values.forEach((item) => {
+    const name = normalizeCategoryName(item);
+    if (name) {
+      unique.add(name);
+    }
+  });
+  return Array.from(unique);
+}
+
 async function readStoreData() {
   try {
     const raw = await fs.readFile(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
     const products = Array.isArray(parsed.products) ? parsed.products : [];
     const whatsappPhone = sanitizePhone(parsed.settings?.whatsappPhone);
-    return { products, settings: { whatsappPhone } };
+    const categories = sanitizeCategories(parsed.settings?.categories);
+    return { products, settings: { whatsappPhone, categories } };
   } catch (error) {
     if (error.code === "ENOENT") {
-      const initial = { products: [], settings: { whatsappPhone: "" } };
+      const initial = { products: [], settings: { whatsappPhone: "", categories: [] } };
       await writeStoreData(initial);
       return initial;
     }
@@ -43,6 +62,7 @@ function toPublicProduct(product) {
     description: product.description || "",
     price: product.price,
     imageBase64: product.imageBase64 || "",
+    category: normalizeCategoryName(product.category),
   };
 }
 
@@ -61,7 +81,10 @@ app.get("/api/products", async (_req, res) => {
 
 app.get("/api/store-config", async (_req, res) => {
   const storeData = await readStoreData();
-  res.json({ whatsappPhone: storeData.settings.whatsappPhone || "" });
+  res.json({
+    whatsappPhone: storeData.settings.whatsappPhone || "",
+    categories: storeData.settings.categories || [],
+  });
 });
 
 app.get("/api/admin/products", checkAdmin, async (_req, res) => {
@@ -77,13 +100,14 @@ app.get("/api/admin/settings", checkAdmin, async (_req, res) => {
 app.put("/api/admin/settings", checkAdmin, async (req, res) => {
   const storeData = await readStoreData();
   const whatsappPhone = sanitizePhone(req.body.whatsappPhone);
-  storeData.settings = { ...storeData.settings, whatsappPhone };
+  const categories = sanitizeCategories(req.body.categories ?? storeData.settings.categories);
+  storeData.settings = { ...storeData.settings, whatsappPhone, categories };
   await writeStoreData(storeData);
   res.json(storeData.settings);
 });
 
 app.post("/api/admin/products", checkAdmin, async (req, res) => {
-  const { name, price, description, imageBase64 } = req.body;
+  const { name, price, description, imageBase64, category } = req.body;
   if (!name || typeof name !== "string") {
     return res.status(400).json({ error: "Name is required" });
   }
@@ -105,6 +129,7 @@ app.post("/api/admin/products", checkAdmin, async (req, res) => {
     description: (description || "").trim(),
     price: parsedPrice,
     imageBase64: imageBase64 || "",
+    category: normalizeCategoryName(category),
   };
 
   products.push(newProduct);
@@ -126,6 +151,7 @@ app.put("/api/admin/products/:id", checkAdmin, async (req, res) => {
   const nextPrice = req.body.price ?? product.price;
   const nextDescription = req.body.description ?? product.description;
   const nextImageBase64 = req.body.imageBase64 ?? product.imageBase64;
+  const nextCategory = req.body.category ?? product.category;
 
   const parsedPrice = Number(nextPrice);
   if (!nextName || typeof nextName !== "string") {
@@ -141,6 +167,7 @@ app.put("/api/admin/products/:id", checkAdmin, async (req, res) => {
     price: parsedPrice,
     description: (nextDescription || "").trim(),
     imageBase64: typeof nextImageBase64 === "string" ? nextImageBase64 : "",
+    category: normalizeCategoryName(nextCategory),
   };
 
   await writeStoreData(storeData);

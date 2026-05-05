@@ -1,4 +1,5 @@
-const grid = document.getElementById("products-grid");
+const categoriesMenuEl = document.getElementById("categories-menu");
+const productsSectionsEl = document.getElementById("products-sections");
 const emptyState = document.getElementById("empty-state");
 const cartItemsEl = document.getElementById("cart-items");
 const cartTotalEl = document.getElementById("cart-total");
@@ -13,6 +14,8 @@ const cartBackdrop = document.getElementById("cart-backdrop");
 
 let products = [];
 let whatsappPhone = "";
+let storeCategories = [];
+let selectedCategory = "all";
 const cart = new Map();
 
 function formatPrice(value) {
@@ -36,34 +39,95 @@ function updateQty(productId, change) {
   renderCart();
 }
 
+function renderCategoryMenu() {
+  const categories = storeCategories.filter(Boolean);
+  if (!categories.length) {
+    categoriesMenuEl.classList.add("hidden");
+    categoriesMenuEl.innerHTML = "";
+    return;
+  }
+
+  categoriesMenuEl.classList.remove("hidden");
+  categoriesMenuEl.innerHTML = `
+    <button class="category-chip ${selectedCategory === "all" ? "active" : ""}" data-category="all">הכל</button>
+    ${categories
+      .map(
+        (category) =>
+          `<button class="category-chip ${selectedCategory === category ? "active" : ""}" data-category="${category}">${category}</button>`
+      )
+      .join("")}
+  `;
+}
+
+function createProductCard(product) {
+  const card = document.createElement("article");
+  card.className = "card";
+  const imageHtml = product.imageBase64
+    ? `<img alt="${product.name}" src="${product.imageBase64}" />`
+    : `<div class="placeholder">🧸</div>`;
+
+  card.innerHTML = `
+    ${imageHtml}
+    <div class="card-content">
+      <h3>${product.name}</h3>
+      <p>${product.description || ""}</p>
+      <div class="card-actions">
+        <div class="price">${formatPrice(product.price)}</div>
+        <button class="btn-add" data-product-id="${product.id}">הוספה לסל</button>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function appendProductSection(title, items) {
+  if (!items.length) {
+    return;
+  }
+  const section = document.createElement("section");
+  section.className = "products-group";
+  if (title) {
+    const heading = document.createElement("h3");
+    heading.className = "group-title";
+    heading.textContent = title;
+    section.appendChild(heading);
+  }
+  const groupGrid = document.createElement("div");
+  groupGrid.className = "grid";
+  items.forEach((product) => groupGrid.appendChild(createProductCard(product)));
+  section.appendChild(groupGrid);
+  productsSectionsEl.appendChild(section);
+}
+
 function renderProducts() {
-  grid.innerHTML = "";
+  productsSectionsEl.innerHTML = "";
+  renderCategoryMenu();
+
   if (!products.length) {
     emptyState.classList.remove("hidden");
     return;
   }
   emptyState.classList.add("hidden");
 
-  products.forEach((product) => {
-    const card = document.createElement("article");
-    card.className = "card";
-    const imageHtml = product.imageBase64
-      ? `<img alt="${product.name}" src="${product.imageBase64}" />`
-      : `<div class="placeholder">🧸</div>`;
+  const categories = storeCategories.filter(Boolean);
+  const uncategorizedProducts = products.filter((product) => !categories.includes(product.category));
 
-    card.innerHTML = `
-      ${imageHtml}
-      <div class="card-content">
-        <h3>${product.name}</h3>
-        <p>${product.description || ""}</p>
-        <div class="card-actions">
-          <div class="price">${formatPrice(product.price)}</div>
-          <button class="btn-add" data-product-id="${product.id}">הוספה לסל</button>
-        </div>
-      </div>
-    `;
-    grid.appendChild(card);
+  if (!categories.length) {
+    appendProductSection("", products);
+    return;
+  }
+
+  if (selectedCategory !== "all") {
+    const filtered = products.filter((product) => product.category === selectedCategory);
+    appendProductSection(selectedCategory, filtered);
+    return;
+  }
+
+  categories.forEach((category) => {
+    const groupedProducts = products.filter((product) => product.category === category);
+    appendProductSection(category, groupedProducts);
   });
+  appendProductSection("מוצרים בודדים", uncategorizedProducts);
 }
 
 function renderCart() {
@@ -165,12 +229,13 @@ async function initStore() {
   products = await productsResponse.json();
   const config = await configResponse.json();
   whatsappPhone = String(config.whatsappPhone || "");
+  storeCategories = Array.isArray(config.categories) ? config.categories : [];
 
   renderProducts();
   renderCart();
 }
 
-grid.addEventListener("click", (event) => {
+productsSectionsEl.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) {
     return;
@@ -179,6 +244,19 @@ grid.addEventListener("click", (event) => {
   if (target.classList.contains("btn-add") && id) {
     addToCart(id);
   }
+});
+
+categoriesMenuEl.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const category = target.getAttribute("data-category");
+  if (!category) {
+    return;
+  }
+  selectedCategory = category;
+  renderProducts();
 });
 
 cartItemsEl.addEventListener("click", (event) => {
