@@ -61,11 +61,7 @@ body {
 
 .shop-page .container {
   width: min(1120px, 94%);
-  margin: 1rem auto 5.5rem;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1rem;
-  align-items: start;
+  margin: 1rem auto 6.2rem;
 }
 
 .grid {
@@ -212,18 +208,6 @@ button {
   background: #d7263d;
 }
 
-.cart-panel {
-  position: sticky;
-  top: 1rem;
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
-  padding: 0.9rem;
-  display: grid;
-  gap: 0.8rem;
-}
-
 .cart-header {
   display: flex;
   justify-content: space-between;
@@ -243,7 +227,7 @@ button {
 .cart-items {
   display: grid;
   gap: 0.6rem;
-  max-height: 300px;
+  max-height: 42vh;
   overflow: auto;
 }
 
@@ -292,6 +276,73 @@ button {
   cursor: not-allowed;
 }
 
+.cart-dock {
+  position: fixed;
+  right: 0.7rem;
+  left: 0.7rem;
+  bottom: 0.6rem;
+  z-index: 45;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+  padding: 0.7rem 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cart-dock-count {
+  color: #334155;
+  font-size: 0.88rem;
+}
+
+.cart-dock-total {
+  color: #047857;
+}
+
+.cart-dock-action {
+  background: #2563eb;
+  color: #fff;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.cart-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.cart-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.cart-sheet-panel {
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.8rem;
+  max-height: 75vh;
+  box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.2);
+}
+
+.cart-close-btn {
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 0.35rem 0.7rem;
+}
+
 .muted {
   color: #64748b;
 }
@@ -302,25 +353,6 @@ button {
 }
 
 @media (max-width: 900px) {
-  .shop-page .container {
-    grid-template-columns: 1fr;
-    margin-bottom: 7rem;
-  }
-
-  .cart-panel {
-    position: fixed;
-    right: 0.6rem;
-    left: 0.6rem;
-    bottom: 0.55rem;
-    top: auto;
-    max-height: 48vh;
-    z-index: 40;
-  }
-
-  .cart-items {
-    max-height: 20vh;
-  }
-
   .hero-top {
     align-items: flex-start;
   }

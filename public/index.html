@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>חנות הצעצועים שלנו</title>
+    <title>חנות הסקוושים של טליה וגפן</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="shop-page">
@@ -20,11 +20,20 @@
     <main class="container">
       <section id="products-grid" class="grid"></section>
       <p id="empty-state" class="empty-state hidden">כרגע אין מוצרים להצגה.</p>
+    </main>
 
-      <aside class="cart-panel">
+    <button id="cart-dock" class="cart-dock" type="button">
+      <span id="cart-count" class="cart-dock-count">0 פריטים</span>
+      <strong id="cart-total" class="cart-dock-total">0.00 ₪</strong>
+      <span class="cart-dock-action">פתח סל</span>
+    </button>
+
+    <section id="cart-sheet" class="cart-sheet hidden" aria-hidden="true">
+      <div id="cart-backdrop" class="cart-backdrop"></div>
+      <div class="cart-sheet-panel">
         <div class="cart-header">
           <h2>הסל שלי</h2>
-          <span id="cart-count" class="cart-count">0 פריטים</span>
+          <button id="close-cart-btn" class="cart-close-btn" type="button">סגור</button>
         </div>
         <div id="cart-items" class="cart-items">
           <p class="muted">הסל שלך ריק כרגע.</p>
@@ -32,13 +41,13 @@
         <div class="cart-footer">
           <div class="cart-total-row">
             <span>סה"כ</span>
-            <strong id="cart-total">0.00 ₪</strong>
+            <strong id="sheet-cart-total">0.00 ₪</strong>
           </div>
           <button id="checkout-btn" class="checkout-btn" disabled>שלח הזמנה בוואטסאפ</button>
           <p id="checkout-note" class="muted small"></p>
         </div>
-      </aside>
-    </main>
+      </div>
+    </section>
 
     <script src="/app.js"></script>
   </body>

@@ -2,9 +2,14 @@ const grid = document.getElementById("products-grid");
 const emptyState = document.getElementById("empty-state");
 const cartItemsEl = document.getElementById("cart-items");
 const cartTotalEl = document.getElementById("cart-total");
+const sheetCartTotalEl = document.getElementById("sheet-cart-total");
 const cartCountEl = document.getElementById("cart-count");
 const checkoutBtn = document.getElementById("checkout-btn");
 const checkoutNote = document.getElementById("checkout-note");
+const cartDock = document.getElementById("cart-dock");
+const cartSheet = document.getElementById("cart-sheet");
+const closeCartBtn = document.getElementById("close-cart-btn");
+const cartBackdrop = document.getElementById("cart-backdrop");
 
 let products = [];
 let whatsappPhone = "";
@@ -97,6 +102,7 @@ function renderCart() {
   }, 0);
 
   cartTotalEl.textContent = formatPrice(totalPrice);
+  sheetCartTotalEl.textContent = formatPrice(totalPrice);
   cartCountEl.textContent = `${totalItems} פריטים`;
 
   if (!whatsappPhone) {
@@ -109,6 +115,16 @@ function renderCart() {
     checkoutBtn.disabled = false;
     checkoutNote.textContent = "";
   }
+}
+
+function openCartSheet() {
+  cartSheet.classList.remove("hidden");
+  cartSheet.setAttribute("aria-hidden", "false");
+}
+
+function closeCartSheet() {
+  cartSheet.classList.add("hidden");
+  cartSheet.setAttribute("aria-hidden", "true");
 }
 
 function buildWhatsAppMessage() {
@@ -184,6 +200,9 @@ cartItemsEl.addEventListener("click", (event) => {
 });
 
 checkoutBtn.addEventListener("click", checkoutViaWhatsApp);
+cartDock.addEventListener("click", openCartSheet);
+closeCartBtn.addEventListener("click", closeCartSheet);
+cartBackdrop.addEventListener("click", closeCartSheet);
 
 initStore().catch((error) => {
   console.error("Failed to initialize store", error);
