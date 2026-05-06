@@ -5,8 +5,8 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || "1234";
-const SITE_USER = "Admin";
-const SITE_PASSWORD = "P4pert_y";
+const SITE_USER = "talia";
+const SITE_PASSWORD = "121314";
 const DATA_FILE = path.join(__dirname, "data", "products.json");
 
 function requireSiteAuth(req, res, next) {
