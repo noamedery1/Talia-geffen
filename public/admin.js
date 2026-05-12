@@ -167,6 +167,7 @@ async function loadAdminProducts() {
       <strong>${product.name}</strong>
       <input data-id="${product.id}" data-field="name" value="${product.name}" />
       <input data-id="${product.id}" data-field="price" type="number" step="0.1" value="${product.price}" />
+      <input data-id="${product.id}" data-field="stock" type="number" min="0" step="1" value="${product.stock ?? 1}" />
       <textarea data-id="${product.id}" data-field="description">${product.description || ""}</textarea>
       <select data-id="${product.id}" data-field="category">
         <option value="">ללא קטגוריה</option>
@@ -203,6 +204,7 @@ addForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const name = document.getElementById("name").value.trim();
   const price = document.getElementById("price").value;
+  const stock = document.getElementById("stock").value;
   const description = document.getElementById("description").value.trim();
   const category = categorySelect.value;
   const file = document.getElementById("image").files[0];
@@ -213,7 +215,7 @@ addForm.addEventListener("submit", async (event) => {
 
   const response = await adminFetch("/api/admin/products", {
     method: "POST",
-    body: JSON.stringify({ name, price, description, imageBase64, category, badges }),
+    body: JSON.stringify({ name, price, stock, description, imageBase64, category, badges }),
   });
 
   if (!response.ok) {
@@ -251,6 +253,7 @@ adminProducts.addEventListener("click", async (event) => {
   if (action === "save") {
     const nameEl = document.querySelector(`input[data-id="${id}"][data-field="name"]`);
     const priceEl = document.querySelector(`input[data-id="${id}"][data-field="price"]`);
+    const stockEl = document.querySelector(`input[data-id="${id}"][data-field="stock"]`);
     const descriptionEl = document.querySelector(`textarea[data-id="${id}"][data-field="description"]`);
     const categoryEl = document.querySelector(`select[data-id="${id}"][data-field="category"]`);
     const badges = Array.from(
@@ -260,6 +263,7 @@ adminProducts.addEventListener("click", async (event) => {
     const body = {
       name: nameEl ? nameEl.value.trim() : "",
       price: priceEl ? priceEl.value : "",
+      stock: stockEl ? stockEl.value : 1,
       description: descriptionEl ? descriptionEl.value.trim() : "",
       category: categoryEl ? categoryEl.value : "",
       badges,

@@ -37,6 +37,20 @@ function formatPrice(value) {
   return `${Number(value).toFixed(2)} ₪`;
 }
 
+function getProductStock(product) {
+  const parsed = Number(product?.stock ?? 1);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 1;
+}
+
+function showStockMessage(message) {
+  checkoutNote.textContent = message;
+  window.setTimeout(() => {
+    if (checkoutNote.textContent === message) {
+      renderCart();
+    }
+  }, 2200);
+}
+
 function isFavorite(productId) {
   return favorites.has(productId);
 }
@@ -56,7 +70,9 @@ function toggleFavorite(productId) {
 
 function badgesHtml(product) {
   const list = Array.isArray(product.badges) ? product.badges : [];
-  if (!list.length) {
+  const stock = getProductStock(product);
+  const outOfStock = stock <= 0;
+  if (!list.length && !outOfStock) {
     return "";
   }
   const map = {
@@ -64,10 +80,12 @@ function badgesHtml(product) {
     best: { label: "הכי נמכר", cls: "badge-best" },
     sale: { label: "מבצע", cls: "badge-sale" },
   };
-  return `<div class="product-badges">${list
+  const productBadges = list
     .filter((tag) => map[tag])
     .map((tag) => `<span class="badge ${map[tag].cls}">${map[tag].label}</span>`)
-    .join("")}</div>`;
+    .join("");
+  const stockBadge = outOfStock ? '<span class="badge badge-out">חסר במלאי</span>' : "";
+  return `<div class="product-badges">${stockBadge}${productBadges}</div>`;
 }
 
 function favBtnHtml(product) {
@@ -77,7 +95,20 @@ function favBtnHtml(product) {
 }
 
 function addToCart(productId, anchorEl) {
+  const product = products.find((item) => item.id === productId);
+  if (!product) {
+    return;
+  }
+  const stock = getProductStock(product);
+  if (stock <= 0) {
+    showStockMessage("המוצר חסר במלאי.");
+    return;
+  }
   const current = cart.get(productId) || 0;
+  if (current >= stock) {
+    showStockMessage("אין עוד במלאי.");
+    return;
+  }
   cart.set(productId, current + 1);
   renderCart();
   burstConfettiAt(anchorEl);
@@ -89,6 +120,11 @@ function updateQty(productId, change) {
   if (next <= 0) {
     cart.delete(productId);
   } else {
+    const product = products.find((item) => item.id === productId);
+    if (change > 0 && product && next > getProductStock(product)) {
+      showStockMessage("אין עוד במלאי.");
+      return;
+    }
     cart.set(productId, next);
   }
   renderCart();
@@ -121,7 +157,9 @@ function renderCategoryMenu() {
 
 function createProductCard(product) {
   const card = document.createElement("article");
-  card.className = "card";
+  const stock = getProductStock(product);
+  const isOutOfStock = stock <= 0;
+  card.className = `card ${isOutOfStock ? "out-of-stock" : ""}`;
   const imageHtml = product.imageBase64
     ? `<img alt="${product.name}" src="${product.imageBase64}" />`
     : `<div class="placeholder">🧸</div>`;
@@ -133,9 +171,14 @@ function createProductCard(product) {
     <div class="card-content">
       <h3>${product.name}</h3>
       <p>${product.description || ""}</p>
+      <p class="stock-note ${isOutOfStock ? "stock-empty" : ""}">
+        ${isOutOfStock ? "חסר במלאי" : `נשארו ${stock} במלאי`}
+      </p>
       <div class="card-actions">
         <div class="price">${formatPrice(product.price)}</div>
-        <button class="btn-add" data-product-id="${product.id}">הוספה לסל</button>
+        <button class="btn-add" data-product-id="${product.id}" ${isOutOfStock ? "disabled" : ""}>
+          ${isOutOfStock ? "אזל מהמלאי" : "הוספה לסל"}
+        </button>
       </div>
     </div>
   `;
@@ -158,19 +201,26 @@ function renderCarousel() {
 
   carouselTrackEl.innerHTML = featuredProducts
     .map((product) => {
+      const stock = getProductStock(product);
+      const isOutOfStock = stock <= 0;
       const media = product.imageBase64
         ? `<img src="${product.imageBase64}" alt="${product.name}" />`
         : `<div class="placeholder">🧸</div>`;
       return `
-        <article class="carousel-slide">
+        <article class="carousel-slide ${isOutOfStock ? "out-of-stock" : ""}">
           <div class="carousel-media">${media}${badgesHtml(product)}${favBtnHtml(product)}</div>
           <div class="carousel-content">
             <p class="carousel-kicker">מוצר חם היום</p>
             <h3>${product.name}</h3>
             <p>${product.description || "סקווש כיפי במיוחד לילדים"}</p>
+            <p class="stock-note ${isOutOfStock ? "stock-empty" : ""}">
+              ${isOutOfStock ? "חסר במלאי" : `נשארו ${stock} במלאי`}
+            </p>
             <div class="carousel-bottom">
               <strong>${formatPrice(product.price)}</strong>
-              <button class="btn-add" data-product-id="${product.id}">הוספה מהירה</button>
+              <button class="btn-add" data-product-id="${product.id}" ${isOutOfStock ? "disabled" : ""}>
+                ${isOutOfStock ? "אזל מהמלאי" : "הוספה מהירה"}
+              </button>
             </div>
           </div>
         </article>
@@ -294,17 +344,18 @@ function renderCart() {
       if (!product) {
         return;
       }
+      const stock = getProductStock(product);
       const line = document.createElement("div");
       line.className = "cart-line";
       line.innerHTML = `
         <div>
           <strong>${product.name}</strong>
-          <div class="muted small">${formatPrice(product.price)} ליחידה</div>
+          <div class="muted small">${formatPrice(product.price)} ליחידה · מלאי: ${stock}</div>
         </div>
         <div class="qty-actions">
           <button data-cart-action="minus" data-product-id="${id}">-</button>
           <span>${qty}</span>
-          <button data-cart-action="plus" data-product-id="${id}">+</button>
+          <button data-cart-action="plus" data-product-id="${id}" ${qty >= stock ? "disabled" : ""}>+</button>
         </div>
       `;
       cartItemsEl.appendChild(line);

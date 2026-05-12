@@ -366,6 +366,28 @@ body {
   font-size: 0.92rem;
 }
 
+.stock-note {
+  width: fit-content;
+  color: #0f766e;
+  background: #ecfeff;
+  border: 1px solid #bae6fd;
+  border-radius: 999px;
+  padding: 0.16rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.stock-note.stock-empty {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.out-of-stock img,
+.out-of-stock .placeholder {
+  filter: grayscale(0.35) opacity(0.72);
+}
+
 .card-actions {
   margin-top: auto;
   display: flex;
@@ -395,6 +417,15 @@ body {
   transform: translateY(-1px);
   filter: brightness(1.02);
   box-shadow: 0 12px 22px rgba(236, 72, 153, 0.18);
+}
+
+.btn-add:disabled,
+.qty-actions button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+  opacity: 0.58;
+  transform: none;
+  box-shadow: none;
 }
 
 .empty-state {
@@ -797,6 +828,10 @@ button {
 
 .badge-sale {
   background: linear-gradient(90deg, #ec4899, #db2777);
+}
+
+.badge-out {
+  background: linear-gradient(90deg, #ef4444, #b91c1c);
 }
 
 .fav-btn {

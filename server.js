@@ -78,6 +78,14 @@ function sanitizeBadges(values) {
   return Array.from(unique);
 }
 
+function normalizeStock(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 1;
+  }
+  return Math.floor(parsed);
+}
+
 async function readStoreData() {
   try {
     const raw = await fs.readFile(DATA_FILE, "utf8");
@@ -110,6 +118,16 @@ function toPublicProduct(product) {
     imageBase64: product.imageBase64 || "",
     category: normalizeCategoryName(product.category),
     badges: sanitizeBadges(product.badges),
+    stock: normalizeStock(product.stock ?? 1),
+  };
+}
+
+function toAdminProduct(product) {
+  return {
+    ...product,
+    category: normalizeCategoryName(product.category),
+    badges: sanitizeBadges(product.badges),
+    stock: normalizeStock(product.stock ?? 1),
   };
 }
 
@@ -136,7 +154,7 @@ app.get("/api/store-config", async (_req, res) => {
 
 app.get("/api/admin/products", checkAdmin, async (_req, res) => {
   const storeData = await readStoreData();
-  res.json(storeData.products);
+  res.json(storeData.products.map(toAdminProduct));
 });
 
 app.get("/api/admin/settings", checkAdmin, async (_req, res) => {
@@ -154,7 +172,7 @@ app.put("/api/admin/settings", checkAdmin, async (req, res) => {
 });
 
 app.post("/api/admin/products", checkAdmin, async (req, res) => {
-  const { name, price, description, imageBase64, category, badges } = req.body;
+  const { name, price, description, imageBase64, category, badges, stock } = req.body;
   if (!name || typeof name !== "string") {
     return res.status(400).json({ error: "Name is required" });
   }
@@ -178,6 +196,7 @@ app.post("/api/admin/products", checkAdmin, async (req, res) => {
     imageBase64: imageBase64 || "",
     category: normalizeCategoryName(category),
     badges: sanitizeBadges(badges),
+    stock: normalizeStock(stock ?? 1),
   };
 
   products.push(newProduct);
@@ -201,6 +220,7 @@ app.put("/api/admin/products/:id", checkAdmin, async (req, res) => {
   const nextImageBase64 = req.body.imageBase64 ?? product.imageBase64;
   const nextCategory = req.body.category ?? product.category;
   const nextBadges = req.body.badges ?? product.badges ?? [];
+  const nextStock = req.body.stock ?? product.stock ?? 1;
 
   const parsedPrice = Number(nextPrice);
   if (!nextName || typeof nextName !== "string") {
@@ -218,6 +238,7 @@ app.put("/api/admin/products/:id", checkAdmin, async (req, res) => {
     imageBase64: typeof nextImageBase64 === "string" ? nextImageBase64 : "",
     category: normalizeCategoryName(nextCategory),
     badges: sanitizeBadges(nextBadges),
+    stock: normalizeStock(nextStock),
   };
 
   await writeStoreData(storeData);
